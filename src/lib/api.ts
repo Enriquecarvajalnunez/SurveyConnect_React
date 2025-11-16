@@ -442,7 +442,6 @@ export async function createOpcionRespuesta(opcionData: any) {
 }
 
 //obtener preguntas
-
 export async function getTiposPregunta() {
   const { data, error } = await supabase
     .from("tipopregunta")

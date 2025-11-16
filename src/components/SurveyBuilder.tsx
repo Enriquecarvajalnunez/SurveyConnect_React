@@ -31,7 +31,7 @@ export function SurveyBuilder({ user, editingSurvey, onBack, onLogout }: SurveyB
   const [estado, setEstado] = useState<'Borrador' | 'Publicada' | 'Cerrada'>(editingSurvey?.estado || 'Borrador');
   const [preguntas, setPreguntas] = useState<Question[]>(editingSurvey?.preguntas || []);
 
-  //traemos tipos de pregunta  
+  //Traemos tipos de pregunta  
   const [questionTypes, setQuestionTypes] = useState<QuestionType[]>([]);
 
   useEffect(() => {
