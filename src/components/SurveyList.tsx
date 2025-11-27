@@ -5,8 +5,10 @@ import { Badge } from './ui/badge';
 import { Input } from './ui/input';
 import { ArrowLeft, Search, Edit, Eye, BarChart3, LogOut, Link2, Calendar, Building2 } from 'lucide-react';
 import type { User, Survey } from '../App';
-import { toast } from 'sonner@2.0.3';
-import { getCompanyName } from '../lib/mockData';
+import { toast } from 'sonner';
+import { getCompanyName } from "../lib/api";
+import { useEffect} from "react";
+import { getEncuestas } from "../lib/api";
 
 type SurveyListProps = {
   user: User;
@@ -17,122 +19,58 @@ type SurveyListProps = {
   onViewResults: (survey: Survey) => void;
 };
 
-// Mock surveys data
-const MOCK_SURVEYS: Survey[] = [
-  {
-    encuestaID: 1,
-    empresaID: 1,
-    usuarioCreadorID: 1,
-    titulo: 'Encuesta de Satisfacción Laboral 2025',
-    descripcion: 'Evaluación anual del clima laboral y satisfacción de los empleados',
-    fechaCreacion: '2025-01-15T10:00:00',
-    fechaInicioVigencia: '2025-02-01',
-    fechaFinVigencia: '2025-02-28',
-    estado: 'Publicada',
-    enlaceLargo: 'https://encuestas.empresa.com/satisfaccion-laboral-2025',
-    enlaceCorto: 'sat2025',
-    preguntas: [
-      {
-        preguntaID: 1,
-        encuestaID: 1,
-        tipoPreguntaID: 5,
-        textoPregunta: '¿Qué tan satisfecho estás con tu trabajo actual?',
-        orden: 1,
-        esObligatoria: true,
-        opciones: [
-          { opcionID: 1, preguntaID: 1, textoOpcion: 'Muy insatisfecho', valor: 1, orden: 1 },
-          { opcionID: 2, preguntaID: 1, textoOpcion: 'Insatisfecho', valor: 2, orden: 2 },
-          { opcionID: 3, preguntaID: 1, textoOpcion: 'Neutral', valor: 3, orden: 3 },
-          { opcionID: 4, preguntaID: 1, textoOpcion: 'Satisfecho', valor: 4, orden: 4 },
-          { opcionID: 5, preguntaID: 1, textoOpcion: 'Muy satisfecho', valor: 5, orden: 5 },
-        ],
-      },
-      {
-        preguntaID: 2,
-        encuestaID: 1,
-        tipoPreguntaID: 2,
-        textoPregunta: '¿Qué aspectos crees que podríamos mejorar?',
-        orden: 2,
-        esObligatoria: false,
-      },
-    ],
-  },
-  {
-    encuestaID: 2,
-    empresaID: 1,
-    usuarioCreadorID: 2,
-    titulo: 'Evaluación de Capacitación - Marketing Digital',
-    descripcion: 'Feedback sobre la capacitación de marketing digital del mes de enero',
-    fechaCreacion: '2025-01-20T14:30:00',
-    fechaInicioVigencia: '2025-01-25',
-    fechaFinVigencia: '2025-02-10',
-    estado: 'Publicada',
-    enlaceLargo: 'https://encuestas.empresa.com/capacitacion-marketing-digital',
-    enlaceCorto: 'cap-mkt',
-    preguntas: [
-      {
-        preguntaID: 3,
-        encuestaID: 2,
-        tipoPreguntaID: 3,
-        textoPregunta: '¿Cómo calificarías el contenido de la capacitación?',
-        orden: 1,
-        esObligatoria: true,
-        opciones: [
-          { opcionID: 6, preguntaID: 3, textoOpcion: 'Excelente', orden: 1 },
-          { opcionID: 7, preguntaID: 3, textoOpcion: 'Bueno', orden: 2 },
-          { opcionID: 8, preguntaID: 3, textoOpcion: 'Regular', orden: 3 },
-          { opcionID: 9, preguntaID: 3, textoOpcion: 'Necesita mejorar', orden: 4 },
-        ],
-      },
-    ],
-  },
-  {
-    encuestaID: 3,
-    empresaID: 1,
-    usuarioCreadorID: 1,
-    titulo: 'Clima Organizacional Q1 2025',
-    descripcion: 'Medición del clima organizacional del primer trimestre',
-    fechaCreacion: '2025-01-10T09:00:00',
-    fechaInicioVigencia: '2025-03-01',
-    fechaFinVigencia: '2025-03-31',
-    estado: 'Borrador',
-    enlaceLargo: 'https://encuestas.empresa.com/clima-q1-2025',
-    enlaceCorto: 'clima-q1',
-    preguntas: [],
-  },
-  {
-    encuestaID: 4,
-    empresaID: 1,
-    usuarioCreadorID: 2,
-    titulo: 'Encuesta de Beneficios',
-    descripcion: 'Conoce tu opinión sobre los beneficios actuales de la empresa',
-    fechaCreacion: '2024-12-20T11:00:00',
-    fechaInicioVigencia: '2025-01-01',
-    fechaFinVigencia: '2025-01-15',
-    estado: 'Cerrada',
-    enlaceLargo: 'https://encuestas.empresa.com/beneficios-2025',
-    enlaceCorto: 'benef',
-    preguntas: [],
-  },
-];
 
 export function SurveyList({ user, onBack, onLogout, onEditSurvey, onViewSurvey, onViewResults }: SurveyListProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterEstado, setFilterEstado] = useState<'Todas' | 'Borrador' | 'Publicada' | 'Cerrada'>('Todas');
+  const [filterEstado, setFilterEstado] =
+    useState<'Todas' | 'Borrador' | 'Publicada' | 'Cerrada'>('Todas');
 
-  const filteredSurveys = MOCK_SURVEYS.filter((survey) => {
-    const matchesSearch = survey.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          survey.descripcion.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterEstado === 'Todas' || survey.estado === filterEstado;
-    const matchesCompany = user.rol === 'Admin' || survey.empresaID === user.empresaID;
+  const [encuestas, setEncuestas] = useState<Survey[]>([]);
+  const [companyNames, setCompanyNames] = useState<Record<number, string>>({});
+
+  const cargarEncuestas = async () => {
+  try {
+    const data = await getEncuestas();
+
+    const empresaCache: Record<number, string> = {};
+
+    // Cargar nombres de empresa solo una vez
+    for (const e of data) {
+      if (!empresaCache[e.empresaID]) {
+        empresaCache[e.empresaID] = await getCompanyName(e.empresaID);
+      }
+    }
+
+    setEncuestas(data);
+    setCompanyNames(empresaCache);
+
+  } catch (err) {
+    console.error("Error al cargar encuestas", err);
+  }
+};
+
+  useEffect(() => {
+    cargarEncuestas();
+  }, []);
+
+  const filteredSurveys = encuestas.filter((survey) => {
+    const matchesSearch =
+      survey.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      survey.descripcion.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesFilter =
+      filterEstado === 'Todas' || survey.estado === filterEstado;
+
+    const matchesCompany =
+      user.rol === 'Admin' || survey.empresaID === user.empresaID;
+
     return matchesSearch && matchesFilter && matchesCompany;
   });
 
-  const copyLink = (enlaceCorto: string) => {
-    const link = `https://encuestas.empresa.com/${enlaceCorto}`;
-    navigator.clipboard.writeText(link);
-    toast.success('Enlace copiado al portapapeles');
-  };
+const copyLink = (link: string) => {
+  navigator.clipboard.writeText(link);
+  toast.success("Enlace copiado");
+};
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -210,7 +148,7 @@ export function SurveyList({ user, onBack, onLogout, onEditSurvey, onViewSurvey,
                       <p className="text-sm text-gray-600">{survey.descripcion}</p>
                       <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
                         <Building2 className="w-3 h-3" />
-                        <span>{getCompanyName(survey.empresaID)}</span>
+                        <span>{companyNames[survey.empresaID] || "Cargando..."}</span>
                       </div>
                     </div>
                   </div>

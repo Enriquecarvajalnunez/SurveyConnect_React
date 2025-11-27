@@ -30,6 +30,7 @@ export function UserManagement({ user, onBack, onLogout }: UserManagementProps) 
   const [nombre, setNombre] = useState('');
   const [apellido, setApellido] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [empresaID, setEmpresaID] = useState<number>(user.empresaID);
   const [rol, setRol] = useState<'Admin' | 'Creador' | 'Analista'>('Creador');
   const [estado, setEstado] = useState<'Activo' | 'Inactivo'>('Activo');
@@ -122,7 +123,7 @@ export function UserManagement({ user, onBack, onLogout }: UserManagementProps) 
         toast.success('Usuario actualizado exitosamente');
       } else {
         // Create new user
-        await createUsuario(empresaID, email, nombre, apellido, rol, estado);
+        await createUsuario(empresaID, email, nombre, apellido, rol, estado, password);
         toast.success('Usuario creado exitosamente. Contraseña temporal: demo123');
       }
 
@@ -231,6 +232,22 @@ export function UserManagement({ user, onBack, onLogout }: UserManagementProps) 
                           onChange={(e) => setEmail(e.target.value)}
                           required
                         />
+                        <div className="space-y-2 col-span-2">
+                          <Label htmlFor="password">Contraseña</Label>
+                          <Input
+                            id="password"
+                            type="password"
+                            placeholder="Ingresa una contraseña segura"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required={!editingUser} 
+                          />
+                          {!editingUser && (
+                            <p className="text-xs text-gray-500">
+                              La contraseña será encriptada automáticamente.
+                            </p>
+                          )}
+                        </div>                        
                       </div>
                       <div className="space-y-2 col-span-2">
                         <Label htmlFor="empresa">Empresa</Label>

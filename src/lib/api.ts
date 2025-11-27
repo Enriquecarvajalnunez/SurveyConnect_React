@@ -1,5 +1,6 @@
 import { supabase } from "../utils/supabaseClient";
 import type { Company } from "../App";
+import bcrypt from "bcryptjs";
 
 // ============= AUTH (LOGIN REAL) =============
 
@@ -23,7 +24,7 @@ export async function login(email: string, password: string) {
 
   if (error) throw new Error("Usuario no encontrado");
 
-  // ⚠️ Comparación temporal SIN hash — luego la reemplazamos
+  //Comparación temporal SIN hash — luego la reemplazamos
   if (data.passwordhash !== password) {
     throw new Error("Contraseña incorrecta");
   }
@@ -161,22 +162,42 @@ export async function createUsuario(
   nombre: string,
   apellido: string,
   rol: 'Admin' | 'Creador' | 'Analista',
-  estado: 'Activo' | 'Inactivo'
-): Promise<User> {
-  const response = await fetch(`${API_URL}/usuarios`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({ empresaID, email, nombre, apellido, rol, estado }),
-  });
+  estado: 'Activo' | 'Inactivo',
+  password: string
+) {
+  // Hashear contraseña
+  const passwordHash = await bcrypt.hash(password, 10);
 
-  const result = await response.json();
-  
-  if (!result.success) {
-    throw new Error(result.error || 'Error al crear usuario');
-  }
+  const { data, error } = await supabase
+    .from("usuario")
+    .insert([
+      {
+        empresaid: empresaID,
+        email,
+        nombre,
+        apellido,
+        rol,
+        estado,
+        passwordhash: passwordHash
+      }
+    ])
+    .select()
+    .single();
 
-  return result.data;
+  if (error) throw error;
+
+  return {
+    usuarioID: data.usuarioid,
+    empresaID: data.empresaid,
+    email: data.email,
+    nombre: data.nombre,
+    apellido: data.apellido,
+    rol: data.rol,
+    estado: data.estado,
+    fechaCreacion: data.fechacreacion,
+  };
 }
+
 
 export async function updateUsuario(
   usuarioID: number,
@@ -203,6 +224,7 @@ export async function updateUsuario(
 }
 
 // ============= ENCUESTAS =============
+//Muestra las encuestas
 
 export async function getEncuestas() {
   const { data, error } = await supabase
@@ -458,3 +480,17 @@ export async function getTiposPregunta() {
     nombreTipo: row.nombretipo,
   }));
 }
+
+//se obtiene Empresas
+export async function getCompanyName(empresaID) {
+  const { data, error } = await supabase
+    .from("empresa")
+    .select("nombre")
+    .eq("empresaid", empresaID)
+    .single();
+
+  if (error) throw error;
+
+  return data?.nombre || null;
+}
+

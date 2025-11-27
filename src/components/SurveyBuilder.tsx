@@ -105,7 +105,7 @@ const handleSave = async (publish: boolean = false) => {
     return;
   }
   try {
-    // 1️⃣ Guardar ENCUESTA
+    //Guardar ENCUESTA
    const encuesta = await createEncuesta({
       empresaID: user.empresaID,
       usuarioCreadorID: user.usuarioID,
@@ -119,7 +119,7 @@ const handleSave = async (publish: boolean = false) => {
       preguntas // si aún no las usas, puedes dejarlas vacías
     });
     toast.success(publish ? "Encuesta publicada" : "Encuesta guardada");    
-    // 2️⃣ Guardar PREGUNTAS
+    //Guardar PREGUNTAS
     for (const p of preguntas) {
       const pregunta = await createPregunta({
         encuestaid: encuesta,
@@ -129,7 +129,7 @@ const handleSave = async (publish: boolean = false) => {
         esobligatoria: p.esObligatoria
       });
 
-      // 3️⃣ Si la pregunta requiere opciones
+      //Si la pregunta requiere opciones
       if (p.opciones?.length > 0) {
         for (const op of p.opciones) {
           await createOpcionRespuesta({
@@ -209,7 +209,7 @@ const handleSave = async (publish: boolean = false) => {
               <Label htmlFor="titulo">Título de la Encuesta</Label>
               <Input
                 id="titulo"
-                placeholder="Ej: Encuesta de Satisfacción Laboral 2025"
+                placeholder="Ej: Encuesta de Satisfacción Laboral 2026"
                 value={titulo}
                 onChange={(e) => setTitulo(e.target.value)}
               />
